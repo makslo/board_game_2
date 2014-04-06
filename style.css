@@ -1,0 +1,36 @@
+@import url(http://fonts.googleapis.com/css?family=Press+Start+2P);
+
+body{
+  background: url('bg.png') black;
+  font-family: 'Press Start 2P', cursive;
+}
+
+h3, h3 span#name{
+  color: white;
+}
+
+.game{
+  text-align: left;
+  margin: auto;
+  width:704;
+}
+
+span{
+  color:#6080a0;
+  padding-bottom:20px;
+}
+
+span.health{
+  float: right;
+}
+canvas{
+  border: 10px solid #303030;
+  margin: auto;
+  /*Anti-Aliasing*/
+  image-rendering: optimizeSpeed;             // Older versions of FF
+  image-rendering: -moz-crisp-edges;          // FF 6.0+
+  image-rendering: -webkit-optimize-contrast; // Webkit
+  image-rendering: -o-crisp-edges;            // OS X & Windows Opera (12.02+)
+  image-rendering: optimize-contrast;         // Possible future browsers.
+  -ms-interpolation-mode: nearest-neighbor;   // IE
+}
