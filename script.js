@@ -19,14 +19,21 @@ window.onload=function(){
   context.mozImageSmoothingEnabled = false;
   context.webkitImageSmoothingEnabled = false;
 
-  // Image Sprite
+  // Image Sprites
   var sprite = new Image();
   sprite.src = "game_sprite.png"
   sprite.addEventListener('load', eventSheetLoaded, false);
 
+  var symbol = new Image();
+  symbol.src = "symbol1.png"
+  symbol.addEventListener('load', eventSheetLoaded, false);
+
   // Map
   var map = Map.grid_0_0
   
+  var animationFrames = [1,2,3,4,5,6,7,8,9,10]
+  var frameIndex = 0;
+  var animDir = -1;
 
   window.onkeypress = function(e){
     var x=player_x;
@@ -43,6 +50,9 @@ window.onload=function(){
         break;
       case 100:
         if (player_x<grid_side){x=player_x+1}
+        else if(player_x==grid_side){
+          if(map == Map.grid_m1_0 && Map.grid_0_0.terrain[player_y][0]!=1){map = Map.grid_0_0;x=0;}
+        }
         player = Sprite.player.right;
         break;
       case 115:
@@ -56,6 +66,9 @@ window.onload=function(){
         break;
       case 97:
         if (player_x>0){x=x-1}
+        else if(player_x==0){
+          if(map == Map.grid_0_0 && Map.grid_m1_0.terrain[player_y][grid_side]!=1){map = Map.grid_m1_0;x=grid_side;}
+        }
         player = Sprite.player.left;
         break;
       case 32:
@@ -73,29 +86,37 @@ window.onload=function(){
   }
 
   function eventSheetLoaded(){
+    gameLoop();
+  }
+
+  function gameLoop(){
+    window.setTimeout(gameLoop,100);
     drawScreen();
   }
   
 
   function attack(){
     var direction = playerDirection();
-    if (map.terrain[player_y+direction[1]][player_x+direction[0]]==1){
-      map.terrain[player_y+direction[1]][player_x+direction[0]]=0;
-      drawScreen();
+    if (((player_x+direction[0])>=0&&(player_x+direction[0])<=grid_side)&&((player_y+direction[1])>=0&&(player_y+direction[1])<=grid_side)){
+      if (map.terrain[player_y+direction[1]][player_x+direction[0]]==1){
+        map.terrain[player_y+direction[1]][player_x+direction[0]]=0;
+        drawScreen();
+      }
     }
   }
 
   function drawScreen(){
+    if (frameIndex%9==0){animDir*=-1}
+    frameIndex=frameIndex+animDir;
     if (map.terrain[player_y][player_x]==3){health-=5}
     if (health>0){
+      if(frameIndex==0&&health<100&&map==Map.grid_m1_0){
+        health+=0.5;
+      }
       playerLevel.innerText=level;
-      playerHealth.innerText=health+"%";
-      context.fillStyle="#60aa30";
-      context.fillRect(0,0,canvas.width,canvas.height);
-      drawTerrain();
-      placeRoad();
-      placeItems();
-      drawScaled(player,player_x,player_y);
+      playerHealth.innerText=Math.floor(health)+"%";
+      updateView();
+
     } else {
       playerLevel.innerText=level;
       playerHealth.innerText=0+"%";
@@ -111,12 +132,24 @@ window.onload=function(){
 
   }
 
+  function updateView(){
+      context.fillStyle="#60aa30";
+      context.fillRect(0,0,canvas.width,canvas.height);
+      drawTerrain();
+      drawSymbols();
+      placeRoad();
+      placeItems();
+      placeBuildings();
+      placePeople();
+      drawScaled(sprite, player,player_x,player_y);
+  }
+
   function placeRoad(){
     if (map.road!=undefined){
       for(var i=0;i<=grid_side;i++){
         for(var j=0;j<=grid_side;j++){
           if (map.road[j][i]==1){
-            drawScaled(Sprite.road,i,j);
+            drawScaled(sprite, Sprite.road,i,j);
           }
         }
       }
@@ -127,7 +160,7 @@ window.onload=function(){
       for(var i=0;i<=grid_side;i++){
         for(var j=0;j<=grid_side;j++){
           if (map.items[j][i]==1){
-            drawScaled(Sprite.items.sword,i,j);
+            drawScaled(sprite, Sprite.items.sword,i,j);
           }
         }
       }
@@ -136,12 +169,45 @@ window.onload=function(){
   function drawTerrain(){
     for(var i=0;i<=grid_side;i++){
       for(var j=0;j<=grid_side;j++){
-        if (map.terrain[j][i]==0){drawScaled(Sprite.terrain.grass,i,j)}
-        else if (map.terrain[j][i]==1){drawScaled(Sprite.terrain.grass,i,j);drawScaled(Sprite.terrain.tree,i,j)} 
-        else if (map.terrain[j][i]==2){drawScaled(Sprite.terrain.ash,i,j)} 
-        else if (map.terrain[j][i]==3){drawScaled(Sprite.terrain.lava,i,j)}
-        else if (map.terrain[j][i]==4){drawScaled(Sprite.terrain.snow,i,j)}
-        else if (map.terrain[j][i]==5){drawScaled(Sprite.terrain.ice,i,j)}
+        if (map.terrain[j][i]==0){drawScaled(sprite, Sprite.terrain.grass,i,j)}
+        else if (map.terrain[j][i]==1){drawScaled(sprite, Sprite.terrain.grass,i,j);drawScaled(sprite, Sprite.terrain.tree,i,j)} 
+        else if (map.terrain[j][i]==2){drawScaled(sprite, Sprite.terrain.ash,i,j)} 
+        else if (map.terrain[j][i]==3){drawScaled(sprite, Sprite.terrain.lava,i,j)}
+        else if (map.terrain[j][i]==4){drawScaled(sprite, Sprite.terrain.snow,i,j)}
+        else if (map.terrain[j][i]==5){drawScaled(sprite, Sprite.terrain.ice,i,j)}
+      }
+    }
+  }
+  function drawSymbols(){
+    if (map.symbols!=undefined){
+      for(var i=0;i<=grid_side;i++){
+        for(var j=0;j<=grid_side;j++){
+          if (map.symbols[j][i]==1){
+            drawScaled(symbol, Symbols.one,i,j);
+          }
+        }
+      }
+    }
+  }
+  function placeBuildings(){
+    if (map.buildings!=undefined){
+      for(var i=0;i<=grid_side;i++){
+        for(var j=0;j<=grid_side;j++){
+          if (map.buildings[j][i]==1){
+            drawScaled(sprite, Sprite.buildings.house,i,j);
+          }
+        }
+      }
+    }
+  }
+  function placePeople(){
+    if (map.people!=undefined){
+      for(var i=0;i<=grid_side;i++){
+        for(var j=0;j<=grid_side;j++){
+          if (map.people[j][i]==1){drawScaled(sprite, Sprite.people.person1,i,j)}
+          else if (map.people[j][i]==2){drawScaled(sprite, Sprite.people.person2,i,j)}
+          else if (map.people[j][i]==3){drawScaled(sprite, Sprite.people.person3,i,j)}
+        }
       }
     }
   }
@@ -153,12 +219,16 @@ window.onload=function(){
     title.innerText=names[index];
   }
 
-  function drawScaled(element, dx, dy){
+  function drawScaled(spr, element, dx, dy){
     var sx = element[0];
     var sy = element[1];
     var sw = element[2];
     var sh = element[3];
-    context.drawImage(sprite, sx*bit, sy*bit, sw*bit, sh*bit, dx*bit, dy*bit, sw*bit, sh*bit)
+    if (element == Symbols.one){
+      context.drawImage(spr, sx*bit, (sy+3*frameIndex)*bit, sw*bit, sh*bit, dx*bit, dy*bit, sw*bit, sh*bit)
+    } else {
+      context.drawImage(spr, sx*bit, sy*bit, sw*bit, sh*bit, dx*bit, dy*bit, sw*bit, sh*bit)
+    }
   }
 
   function playerDirection(){
